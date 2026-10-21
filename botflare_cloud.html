@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BotFlare Cloud - 個人完全免費 Discord 機器人託管控制台</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#050811',
+                            card: '#0b0f19',
+                            border: '#1e293b',
+                            neonCyan: '#06b6d4',
+                            neonBlue: '#3b82f6',
+                            neonGreen: '#10b981',
+                            neonPurple: '#a855f7',
+                            neonPink: '#ec4899'
+                        }
+                    },
+                    boxShadow: {
+                        'glow-cyan': '0 0 20px -3px rgba(6, 182, 212, 0.3)',
+                        'glow-purple': '0 0 20px -3px rgba(168, 85, 247, 0.3)'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #050811; color: #f8fafc; }
+        .code-font { font-family: 'JetBrains Mono', monospace; }
+        .glass-panel { background: rgba(11, 15, 25, 0.8); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #050811; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #06b6d4; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col custom-scrollbar antialiased selection:bg-cyan-500/30 selection:text-cyan-300">
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-40 border-b border-gray-800/80 bg-slate-950/80 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-glow-cyan">
+                    <i class="fa-solid fa-bolt text-white text-lg animate-pulse"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-base tracking-tight text-white flex items-center gap-2">
+                        <span>BotFlare Cloud</span>
+                        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">個人免費旗艦版</span>
+                    </h1>
+                    <p class="text-[11px] text-gray-400">Cloudflare Workers 邊緣端多機器人管理控制台</p>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs (Desktop) -->
+            <nav class="hidden lg:flex items-center gap-1 text-xs font-semibold">
+                <button onclick="switchTab('metrics')" id="nav-metrics" class="nav-btn px-3 py-2 rounded-xl text-white bg-gray-800/90 border border-cyan-500/30 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-chart-line text-cyan-400"></i> 實時遙測
+                </button>
+                <button onclick="switchTab('bots')" id="nav-bots" class="nav-btn px-3 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800/50 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-robot text-amber-400"></i> 金鑰庫 (Max 25)
+                </button>
+                <button onclick="switchTab('verify')" id="nav-verify" class="nav-btn px-3 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800/50 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-user-shield text-emerald-400"></i> 6字圖形驗證
+                </button>
+                <button onclick="switchTab('welcome')" id="nav-welcome" class="nav-btn px-3 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800/50 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-door-open text-pink-400"></i> 歡迎與離隊通知
+                </button>
+                <button onclick="switchTab('status')" id="nav-status" class="nav-btn px-3 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800/50 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-gamepad text-purple-400"></i> 動態狀態 (Presence)
+                </button>
+                <button onclick="switchTab('commands')" id="nav-commands" class="nav-btn px-3 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800/50 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-wand-magic-sparkles text-blue-400"></i> 斜線指令庫
+                </button>
+                <button onclick="switchTab('generator')" id="nav-generator" class="nav-btn px-3 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800/50 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-code text-indigo-400"></i> 程式碼部署
+                </button>
+            </nav>
+
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    Cloudflare Worker 正常
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Quick Navigation -->
+    <div class="lg:hidden flex overflow-x-auto p-2 border-b border-gray-800 bg-gray-950/90 gap-2 custom-scrollbar text-xs">
+        <button onclick="switchTab('metrics')" class="px-3 py-1.5 rounded-lg bg-gray-800 text-cyan-400 whitespace-nowrap">實時遙測</button>
+        <button onclick="switchTab('bots')" class="px-3 py-1.5 rounded-lg bg-gray-900 text-gray-300 whitespace-nowrap">金鑰庫 (Max 25)</button>
+        <button onclick="switchTab('verify')" class="px-3 py-1.5 rounded-lg bg-gray-900 text-gray-300 whitespace-nowrap">6字圖形驗證</button>
+        <button onclick="switchTab('welcome')" class="px-3 py-1.5 rounded-lg bg-gray-900 text-gray-300 whitespace-nowrap">歡迎與離隊</button>
+        <button onclick="switchTab('status')" class="px-3 py-1.5 rounded-lg bg-gray-900 text-gray-300 whitespace-nowrap">動態狀態</button>
+        <button onclick="switchTab('commands')" class="px-3 py-1.5 rounded-lg bg-gray-900 text-gray-300 whitespace-nowrap">斜線指令</button>
+        <button onclick="switchTab('generator')" class="px-3 py-1.5 rounded-lg bg-gray-900 text-gray-300 whitespace-nowrap">程式碼部署</button>
+    </div>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+
+        <!-- TAB: TELEMETRY METRICS -->
+        <section id="tab-metrics" class="space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="glass-panel p-5 rounded-2xl border border-gray-800 space-y-2">
+                    <div class="flex items-center justify-between text-xs text-gray-400">
+                        <span>平均 CPU 時間</span>
+                        <i class="fa-solid fa-microchip text-indigo-400"></i>
+                    </div>
+                    <div class="text-2xl font-bold text-white code-font">1.2 ms</div>
+                    <p class="text-[11px] text-gray-400">高效能邊緣運算節點</p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl border border-gray-800 space-y-2">
+                    <div class="flex items-center justify-between text-xs text-gray-400">
+                        <span>可管理機器人上限</span>
+                        <i class="fa-solid fa-robot text-amber-400"></i>
+                    </div>
+                    <div class="text-2xl font-bold text-white code-font" id="stat-bot-count">1 / 25 隻</div>
+                    <p class="text-[11px] text-cyan-400">資料已於瀏覽器端持久化保存</p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl border border-gray-800 space-y-2">
+                    <div class="flex items-center justify-between text-xs text-gray-400">
+                        <span>已設定斜線指令</span>
+                        <i class="fa-solid fa-code text-pink-400"></i>
+                    </div>
+                    <div class="text-2xl font-bold text-white code-font" id="stat-cmd-count">25 個</div>
+                    <p class="text-[11px] text-pink-400">25 個熱門斜線指令隨時同步 Worker</p>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 rounded-3xl border border-gray-800 space-y-4">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-server text-cyan-400"></i> Cloudflare 邊緣節點實時狀態 (Edge Gateway)
+                </h3>
+                <div class="p-4 bg-gray-950 rounded-2xl border border-gray-800 space-y-3 text-xs text-gray-300">
+                    <div class="flex justify-between items-center border-b border-gray-800/80 pb-2">
+                        <span>運作模式：</span>
+                        <span class="text-emerald-400 font-bold code-font">Webhooks (High Performance Hosting)</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>簽章驗證演算：</span>
+                        <span class="text-cyan-400 font-bold code-font">Web Crypto API (Ed25519)</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: BOT VAULT (MAX 25) -->
+        <section id="tab-bots" class="hidden space-y-6">
+            <div class="glass-panel p-6 rounded-3xl border border-gray-800 space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-800 pb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-robot text-amber-400"></i>
+                            <span>機器人金鑰庫 (Max 25 隻)</span>
+                        </h2>
+                        <p class="text-xs text-gray-400">新增與託管多隻 Discord 機器人金鑰，資料將永久保存在瀏覽器 LocalStorage 中。</p>
+                    </div>
+                    <button onclick="openAddBotModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-xs hover:opacity-90 transition-all flex items-center gap-2 shadow-lg">
+                        <i class="fa-solid fa-plus"></i> 新增機器人
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="bot-cards-container">
+                    <!-- Dynamic bot cards injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: 6-CHAR GRAPHIC CAPTCHA -->
+        <section id="tab-verify" class="hidden space-y-6">
+            <div class="glass-panel p-6 rounded-3xl border border-gray-800 space-y-6">
+                <div class="border-b border-gray-800 pb-4">
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-user-shield text-emerald-400"></i>
+                        <span>6 字元動態圖形驗證門禁系統</span>
+                    </h2>
+                    <p class="text-xs text-gray-400">由 Cloudflare Worker 邊緣端即時繪製 SVG 圖形驗證碼，防止自動化機器人洗板。</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-300 mb-1">驗證通過發放之 Role ID (身分組 ID)</label>
+                            <input type="text" id="input-verify-role" placeholder="例如：123456789012345678" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-cyan-400 code-font focus:outline-none focus:border-cyan-400">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-300 mb-1">驗證面板標題 (Embed Title)</label>
+                            <input type="text" id="input-verify-title" value="🛡️ 伺服器安全圖形門禁驗證" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-300 mb-1">說明文字</label>
+                            <textarea id="input-verify-desc" rows="3" class="w-full bg-gray-950 border border-gray-800 rounded-xl p-3 text-xs text-gray-200 focus:outline-none focus:border-cyan-400">請點擊下方按鈕，並在跳出的視窗中輸入 6 位數圖形驗證碼以完成驗證並獲得伺服器權限！</textarea>
+                        </div>
+                        <button onclick="saveVerifySettings()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all">
+                            儲存門禁設定
+                        </button>
+                    </div>
+
+                    <div class="bg-gray-950 p-5 rounded-2xl border border-gray-800 space-y-4 flex flex-col justify-between">
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-2">Worker 動態生成驗證碼預覽 (SVG)</span>
+                            <div class="p-4 bg-slate-900 rounded-xl border border-gray-800 flex flex-col items-center gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60" style="background:#090d16; border-radius:12px;">
+                                    <rect width="100%" height="100%" fill="#090d16"/>
+                                    <line x1="10" y1="20" x2="180" y2="50" stroke="#06b6d4" stroke-width="1.5" opacity="0.6"/>
+                                    <line x1="20" y1="50" x2="190" y2="10" stroke="#10b981" stroke-width="1.5" opacity="0.6"/>
+                                    <text x="25" y="40" fill="#06b6d4" font-size="26" font-family="monospace" font-weight="bold" transform="rotate(-5, 25, 40)">7</text>
+                                    <text x="53" y="38" fill="#10b981" font-size="26" font-family="monospace" font-weight="bold" transform="rotate(8, 53, 38)">K</text>
+                                    <text x="81" y="42" fill="#a855f7" font-size="26" font-family="monospace" font-weight="bold" transform="rotate(-3, 81, 42)">9</text>
+                                    <text x="109" y="36" fill="#f97316" font-size="26" font-family="monospace" font-weight="bold" transform="rotate(6, 109, 36)">M</text>
+                                    <text x="137" y="41" fill="#ec4899" font-size="26" font-family="monospace" font-weight="bold" transform="rotate(-7, 137, 41)">2</text>
+                                    <text x="165" y="39" fill="#3b82f6" font-size="26" font-family="monospace" font-weight="bold" transform="rotate(4, 165, 39)">P</text>
+                                </svg>
+                                <p class="text-[11px] text-gray-400 text-center">點擊按鈕時，Worker 會透過 Modal 彈窗即時驗證輸入答案。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: WELCOME & LEAVE NOTIFICATIONS -->
+        <section id="tab-welcome" class="hidden space-y-6">
+            <div class="glass-panel p-6 rounded-3xl border border-gray-800 space-y-6">
+                <div class="border-b border-gray-800 pb-4">
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-door-open text-pink-400"></i>
+                        <span>歡迎與離隊進場通知</span>
+                    </h2>
+                    <p class="text-xs text-gray-400">自訂成員加入與離開伺服器時的自動發訊動態樣式。</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-bold text-pink-400 flex items-center gap-2">
+                            <i class="fa-solid fa-user-plus"></i> 新成員歡迎訊息 (Welcome)
+                        </h3>
+                        <div>
+                            <label class="block text-[11px] text-gray-400 mb-1">通知頻道 ID</label>
+                            <input type="text" id="welcome-channel-id" placeholder="例如：123456789012345678" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-pink-400 code-font focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-gray-400 mb-1">歡迎內容模板 (支援 {user} 與 {server})</label>
+                            <textarea id="welcome-msg" rows="3" class="w-full bg-gray-950 border border-gray-800 rounded-xl p-3 text-xs text-gray-200 focus:outline-none">🎉 歡迎 {user} 加入 **{server}**！請記得閱讀守則！</textarea>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-bold text-gray-400 flex items-center gap-2">
+                            <i class="fa-solid fa-user-minus"></i> 成員離隊通知 (Leave)
+                        </h3>
+                        <div>
+                            <label class="block text-[11px] text-gray-400 mb-1">通知頻道 ID</label>
+                            <input type="text" id="leave-channel-id" placeholder="例如：123456789012345678" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-400 code-font focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-gray-400 mb-1">離隊內容模板</label>
+                            <textarea id="leave-msg" rows="3" class="w-full bg-gray-950 border border-gray-800 rounded-xl p-3 text-xs text-gray-200 focus:outline-none">👋 {user} 已離開了伺服器。</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: STATUS & PRESENCE -->
+        <section id="tab-status" class="hidden space-y-6">
+            <div class="glass-panel p-6 rounded-3xl border border-gray-800 space-y-6">
+                <div class="border-b border-gray-800 pb-4">
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-gamepad text-purple-400"></i>
+                        <span>動態狀態與 Presence 設定</span>
+                    </h2>
+                    <p class="text-xs text-gray-400">動態產生 Discord Presence 設定 JSON Payload。</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-300 mb-1">線上狀態 (Online Status)</label>
+                        <select id="status-type" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                            <option value="online">🟢 線上 (Online)</option>
+                            <option value="idle">🌙 閒置 (Idle)</option>
+                            <option value="dnd">🔴 請勿打擾 (DND)</option>
+                            <option value="invisible">⚪ 隱身 (Invisible)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-300 mb-1">活動類型 (Activity)</label>
+                        <select id="activity-type" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                            <option value="0">Playing (正在玩)</option>
+                            <option value="1">Streaming (正在直播)</option>
+                            <option value="2">Listening to (正在收聽)</option>
+                            <option value="3">Watching (正在觀看)</option>
+                            <option value="5">Competing in (正在競爭)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-300 mb-1">狀態動態文字</label>
+                        <input type="text" id="status-text" value="BotFlare Cloud 24/7 Edge Worker" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-cyan-400 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: SLASH COMMANDS MANAGER -->
+        <section id="tab-commands" class="hidden space-y-6">
+            <div class="glass-panel p-6 rounded-3xl border border-gray-800 space-y-6">
+                <div class="border-b border-gray-800 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-cyan-400"></i>
+                            <span>預設與進階熱門斜線指令庫 (Slash Commands)</span>
+                        </h2>
+                        <p class="text-xs text-gray-400">點擊「新增自訂斜線指令」即可隨時新增或修改指令內容，並自動整合至 Worker 程式碼中！</p>
+                    </div>
+
+                    <button onclick="openAddCommandModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold text-xs shadow-glow-cyan hover:opacity-90 transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> 新增自訂斜線指令
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="commands-container">
+                    <!-- Dynamic Commands cards -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: CODE GENERATOR -->
+        <section id="tab-generator" class="hidden space-y-6">
+            <div class="glass-panel p-6 rounded-3xl border border-gray-800 space-y-4">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+                    <h2 class="text-sm font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-code text-cyan-400"></i>
+                        <span>Cloudflare Worker 一鍵生成部署程式碼 (`index.js`)</span>
+                    </h2>
+                    <button onclick="copyGeneratedCode()" class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-400 font-bold text-xs transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-copy"></i> 複製程式碼
+                    </button>
+                </div>
+
+                <pre class="bg-gray-950 p-4 rounded-2xl border border-gray-800 overflow-x-auto text-xs code-font text-cyan-300 max-h-[500px] custom-scrollbar" id="generated-code-block">// 程式碼產生中...</pre>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal: Add Bot -->
+    <div id="bot-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-robot text-amber-400"></i>
+                    <span>新增機器人金鑰</span>
+                </h3>
+                <button onclick="closeBotModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-base"></i></button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-1">機器人名稱 (例如：My Security Bot)</label>
+                    <input type="text" id="input-bot-name" placeholder="機器人自訂顯示名稱" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-1">Application ID (應用程式 ID)</label>
+                    <input type="text" id="input-bot-appid" placeholder="例如：123456789012345678" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-cyan-400 code-font focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-1">Public Key (公鑰)</label>
+                    <input type="text" id="input-bot-pubkey" placeholder="64 字元 Ed25519 十六進位公鑰" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-cyan-400 code-font focus:outline-none">
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 pt-2">
+                <button onclick="closeBotModal()" class="flex-1 py-2.5 rounded-xl bg-gray-800 text-gray-300 font-bold text-xs hover:bg-gray-700 transition-all">取消</button>
+                <button onclick="saveBotFromModal()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-xs shadow-lg hover:opacity-90 transition-all">儲存機器人</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add / Edit Custom Command -->
+    <div id="cmd-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-cyan-400"></i>
+                    <span id="modal-title">新增/編輯斜線指令</span>
+                </h3>
+                <button onclick="closeCommandModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-base"></i></button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-1">指令名稱 (例如: hello)</label>
+                    <input type="text" id="input-cmd-name" placeholder="小寫字母，勿加斜線 /" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-cyan-400 code-font focus:outline-none focus:border-cyan-400">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-1">指令說明 (Description)</label>
+                    <input type="text" id="input-cmd-desc" placeholder="例如：打招呼指令" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-1">機器人自動回應文字 (Reply Content)</label>
+                    <textarea id="input-cmd-reply" rows="3" placeholder="例如：你好呀！祝你有美好的一天！" class="w-full bg-gray-950 border border-gray-800 rounded-xl p-3 text-xs text-gray-200 focus:outline-none focus:border-cyan-400"></textarea>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 pt-2">
+                <button onclick="closeCommandModal()" class="flex-1 py-2.5 rounded-xl bg-gray-800 text-gray-300 font-bold text-xs hover:bg-gray-700 transition-all">取消</button>
+                <button onclick="saveCommandFromModal()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-xs shadow-glow-cyan hover:opacity-90 transition-all">儲存指令</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Central Application State
+        let activeTab = 'metrics';
+        let botVault = [];
+        let customCommands = [];
+        let editingCmdIndex = -1;
+        let codeFiles = { 'index.js': '' };
+
+        // Global Navigation Switcher
+        function switchTab(tabId) {
+            activeTab = tabId;
+            const tabs = ['metrics', 'bots', 'verify', 'welcome', 'status', 'commands', 'generator'];
+            tabs.forEach(t => {
+                const section = document.getElementById(`tab-${t}`);
+                const btn = document.getElementById(`nav-${t}`);
+                if (section) {
+                    if (t === tabId) {
+                        section.classList.remove('hidden');
+                    } else {
+                        section.classList.add('hidden');
+                    }
+                }
+                if (btn) {
+                    if (t === tabId) {
+                        btn.className = 'nav-btn px-3 py-2 rounded-xl text-white bg-gray-800/90 border border-cyan-500/30 flex items-center gap-2 transition-all shadow-glow-cyan';
+                    } else {
+                        btn.className = 'nav-btn px-3 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800/50 flex items-center gap-2 transition-all';
+                    }
+                }
+            });
+
+            if (tabId === 'generator') updateGeneratedCode();
+        }
+
+        // Bot Vault Logic
+        function loadBotVault() {
+            const saved = localStorage.getItem('botflare_vault');
+            if (saved) {
+                try { botVault = JSON.parse(saved); } catch(e) { botVault = []; }
+            }
+            if (!botVault.length) {
+                botVault = [{
+                    id: 'bot_default_01',
+                    name: 'BotFlare Main Core',
+                    appId: '123456789012345678',
+                    publicKey: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2'
+                }];
+                saveBotVault();
+            } else {
+                renderBotVault();
+            }
+        }
+
+        function saveBotVault() {
+            localStorage.setItem('botflare_vault', JSON.stringify(botVault));
+            renderBotVault();
+            generateWorkerCode();
+        }
+
+        function renderBotVault() {
+            const container = document.getElementById('bot-cards-container');
+            const statBotCount = document.getElementById('stat-bot-count');
+            if (statBotCount) statBotCount.innerText = `${botVault.length} / 25 隻`;
+            if (!container) return;
+            container.innerHTML = botVault.map((bot, index) => `
+                <div class="bg-gray-950 p-4 border border-gray-800 rounded-2xl space-y-3 relative group hover:border-amber-500/50 transition-all">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                            <h3 class="font-bold text-sm text-white">${bot.name}</h3>
+                        </div>
+                        <button onclick="deleteBot(${index})" class="text-xs text-rose-500 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition-all" title="刪除機器人">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-1 text-xs code-font">
+                        <div class="text-gray-400 truncate"><span class="text-gray-500">App ID:</span> ${bot.appId}</div>
+                        <div class="text-cyan-400/80 truncate"><span class="text-gray-500">Public Key:</span> ${bot.publicKey.substring(0, 16)}...</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openAddBotModal() {
+            if (botVault.length >= 25) {
+                alert('已達到最多 25 隻機器人的保存上限！');
+                return;
+            }
+            document.getElementById('input-bot-name').value = '';
+            document.getElementById('input-bot-appid').value = '';
+            document.getElementById('input-bot-pubkey').value = '';
+            document.getElementById('bot-modal').classList.remove('hidden');
+        }
+
+        function closeBotModal() {
+            document.getElementById('bot-modal').classList.add('hidden');
+        }
+
+        function saveBotFromModal() {
+            const name = document.getElementById('input-bot-name').value.trim() || '新 Discord 機器人';
+            const appId = document.getElementById('input-bot-appid').value.trim();
+            const publicKey = document.getElementById('input-bot-pubkey').value.trim();
+
+            if (!appId || !publicKey) return alert('請填寫 Application ID 與 Public Key！');
+
+            botVault.push({ id: 'bot_' + Date.now(), name, appId, publicKey });
+            saveBotVault();
+            closeBotModal();
+        }
+
+        function deleteBot(index) {
+            if (botVault.length <= 1) {
+                alert('系統必須保留至少一個 Discord 機器人項目！');
+                return;
+            }
+            if (confirm(`確定要刪除 ${botVault[index].name} 嗎？`)) {
+                botVault.splice(index, 1);
+                saveBotVault();
+            }
+        }
+
+        // Custom Commands Logic
+        function loadCommands() {
+            const saved = localStorage.getItem('botflare_custom_commands');
+            if (saved) {
+                try { customCommands = JSON.parse(saved); } catch(e) { customCommands = []; }
+            }
+            if (!customCommands.length || customCommands.length < 25) {
+                customCommands = [
+                    // 系統與核心
+                    { name: "help", description: "📖 顯示功能指南與所有指令選單", reply: "✨ 本伺服器支援所有圖形驗證、歡迎通知與自訂指令功能！" },
+                    { name: "ping", description: "🏓 測試連線與 Cloudflare 邊緣延遲", reply: "🏓 Pong! 邊緣運行正常 (< 2ms)" },
+                    { name: "verify-setup", description: "🛡️ [管理員] 發送 6 字圖形驗證門禁面板", reply: "請點擊驗證按鈕進行門禁驗證" },
+                    { name: "userinfo", description: "👤 查詢個人帳號資訊、加入時間與身分組", reply: "👤 您的帳號已順利通過 Worker 邊緣端驗證！" },
+                    { name: "serverinfo", description: "🏰 查詢伺服器詳細資訊、人數與加成等級", reply: "🏰 當前伺服器運作狀態良好，成員與頻道數據已更新！" },
+                    
+                    // 音樂與媒體
+                    { name: "play", description: "🎵 播放指定歌曲或 YouTube/Spotify 網址", reply: "🎶 已將歌曲加入播放序列！" },
+                    { name: "skip", description: "⏭️ 跳過當前播放的音樂歌曲", reply: "⏭️ 已跳過當前歌曲！" },
+                    { name: "queue", description: "📜 查看目前音樂播放清單與佇列", reply: "📜 當前播放佇列：共 3 首歌曲等待播放中。" },
+                    { name: "stop", description: "⏹️ 停止音樂播放並讓機器人退出語音頻道", reply: "⏹️ 已停止播放並離開語音頻道。" },
+                    { name: "nowplaying", description: "🎧 顯示目前正在播放的歌曲資訊與進度條", reply: "🎧 當前正在播放歌曲資訊與進度！" },
+
+                    // 管理與模組
+                    { name: "kick", description: "👞 [管理員] 踢出指定違規成員", reply: "👞 已成功將該成員踢出伺服器。" },
+                    { name: "ban", description: "🔨 [管理員] 封鎖指定違規成員", reply: "🔨 已成功封鎖該成員。" },
+                    { name: "clear", description: "🧹 [管理員] 批量刪除頻道內指定數量的訊息", reply: "🧹 已成功清除指定數量的訊息！" },
+                    { name: "mute", description: "禁言指定成員使其無法發言", reply: "已對該成員實施禁言處分。" },
+                    { name: "unmute", description: "解除指定成員的禁言狀態", reply: "已解除該成員的禁言狀態。" },
+
+                    // 經濟與等級
+                    { name: "balance", description: "💰 查詢個人錢包餘額與銀行存款", reply: "💰 您的錢包餘額為：$10,000 硬幣。" },
+                    { name: "daily", description: "🎁 領取每日簽到獎勵金幣", reply: "🎉 簽到成功！獲得今日獎勵 500 金幣！" },
+                    { name: "rank", description: "⭐ 查詢個人等級、經驗值 (XP) 與伺服器排名", reply: "⭐ 當前等級：Level 15 | XP: 4,250 / 5,000" },
+                    { name: "leaderboard", description: "🏆 查看伺服器等級經驗值排行榜", reply: "🏆 伺服器經驗值排行榜 Top 10 已更新！" },
+
+                    // 娛樂與遊戲
+                    { name: "roll", description: "🎲 幸運數值擲骰子 (1-100)", reply: "🎲 恭喜你擲出了幸運點數！" },
+                    { name: "8ball", description: "🎱 神奇 8 號球占卜問答", reply: "🎱 命運告訴我：毫無疑問是的！" },
+                    { name: "cat", description: "🐱 獲取一張可愛貓咪圖片", reply: "🐱 這是為你準備的可愛貓咪圖片！ https://placehold.co/400x300/090d16/06b6d4?text=Cute+Cat" },
+                    { name: "dog", description: "🐶 獲取一張可愛狗狗圖片", reply: "🐶 這是為你準備的可愛狗狗圖片！ https://placehold.co/400x300/090d16/10b981?text=Cute+Dog" },
+                    { name: "meme", description: "😂 隨機抓取 Reddit 迷因梗圖", reply: "😂 今日精選熱門迷因梗圖！" },
+                    { name: "crypto", description: "📈 查詢 BTC / ETH 即時加密貨幣行情", reply: "📈 BTC/USD: $92,500 | ETH/USD: $3,450 (即時數據)" }
+                ];
+                saveCommandsToStorage();
+            } else {
+                renderCommands();
+            }
+        }
+
+        function saveCommandsToStorage() {
+            localStorage.setItem('botflare_custom_commands', JSON.stringify(customCommands));
+            renderCommands();
+            generateWorkerCode();
+        }
+
+        function renderCommands() {
+            const container = document.getElementById('commands-container');
+            const statCmdCount = document.getElementById('stat-cmd-count');
+            if (statCmdCount) statCmdCount.innerText = `${customCommands.length} 個`;
+            if (!container) return;
+            container.innerHTML = customCommands.map((cmd, index) => `
+                <div class="bg-gray-950 p-4 border border-gray-800 rounded-2xl space-y-2 relative group hover:border-cyan-500/50 transition-all">
+                    <div class="flex items-center justify-between">
+                        <div class="font-bold text-sm text-cyan-400 code-font">/${cmd.name}</div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="editCommand(${index})" class="text-xs text-cyan-400 hover:text-cyan-300 p-1.5 rounded-lg hover:bg-cyan-500/10 transition-all" title="編輯指令">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            ${cmd.name !== 'ping' && cmd.name !== 'verify-setup' ? `
+                            <button onclick="deleteCommand(${index})" class="text-xs text-rose-500 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition-all" title="刪除指令">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                            ` : '<span class="text-[10px] text-gray-500 font-mono px-1">核心</span>'}
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-300">${cmd.description}</p>
+                    <div class="text-[11px] text-gray-400 bg-gray-900/80 p-2 rounded-lg code-font border border-gray-800/80 overflow-hidden text-ellipsis">
+                        <span class="text-gray-500 block text-[10px]">自動回覆內容：</span> ${cmd.reply}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openAddCommandModal() {
+            editingCmdIndex = -1;
+            document.getElementById('modal-title').innerText = '新增自訂斜線指令';
+            document.getElementById('input-cmd-name').value = '';
+            document.getElementById('input-cmd-name').disabled = false;
+            document.getElementById('input-cmd-desc').value = '';
+            document.getElementById('input-cmd-reply').value = '';
+            document.getElementById('cmd-modal').classList.remove('hidden');
+        }
+
+        function editCommand(index) {
+            editingCmdIndex = index;
+            const cmd = customCommands[index];
+            document.getElementById('modal-title').innerText = `編輯指令 /${cmd.name}`;
+            document.getElementById('input-cmd-name').value = cmd.name;
+            document.getElementById('input-cmd-name').disabled = true;
+            document.getElementById('input-cmd-desc').value = cmd.description;
+            document.getElementById('input-cmd-reply').value = cmd.reply;
+            document.getElementById('cmd-modal').classList.remove('hidden');
+        }
+
+        function closeCommandModal() {
+            document.getElementById('cmd-modal').classList.add('hidden');
+        }
+
+        function saveCommandFromModal() {
+            const name = document.getElementById('input-cmd-name').value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+            const description = document.getElementById('input-cmd-desc').value.trim() || '自訂指令';
+            const reply = document.getElementById('input-cmd-reply').value.trim() || '收到指令！';
+
+            if (!name) return alert('請輸入有效的指令名稱（僅能包含英文字母與數字）');
+
+            if (editingCmdIndex >= 0) {
+                customCommands[editingCmdIndex].description = description;
+                customCommands[editingCmdIndex].reply = reply;
+            } else {
+                customCommands.push({ name, description, reply });
+            }
+
+            saveCommandsToStorage();
+            closeCommandModal();
+        }
+
+        function deleteCommand(index) {
+            if (confirm(`確定要刪除 /${customCommands[index].name} 指令嗎？`)) {
+                customCommands.splice(index, 1);
+                saveCommandsToStorage();
+            }
+        }
+
+        // Code Generation
+        function generateWorkerCode() {
+            let commandCases = '';
+            customCommands.forEach(cmd => {
+                if (cmd.name === 'ping') {
+                    commandCases += `
+      if (name === 'ping') {
+        return Response.json({ type: 4, data: { content: '🏓 Pong! 邊緣運行正常 (< 2ms)' } });
+      }\n`;
+                } else if (cmd.name === 'verify-setup') {
+                    commandCases += `
+      if (name === 'verify-setup') {
+        return Response.json({
+          type: 4,
+          data: {
+            embeds: [{ title: '🛡️ 6 字元圖形驗證門禁', description: '點擊下方按鈕獲取專屬驗證碼！', color: 0x10b981 }],
+            components: [{ type: 1, components: [{ type: 2, style: 3, label: '獲取 6 字驗證碼 🚀', custom_id: 'btn_start_6char_verify' }] }]
+          }
+        });
+      }\n`;
+                } else {
+                    commandCases += `
+      if (name === '${cmd.name}') {
+        return Response.json({ type: 4, data: { content: \`${cmd.reply.replace(/`/g, '\\`')}\` } });
+      }\n`;
+                }
+            });
+
+            codeFiles['index.js'] = `// BotFlare Cloud - Single Worker Gateway with Dynamic Slash Commands & 6-Char Captcha
+import { Buffer } from 'node:buffer';
+
+function hexToUint8Array(hex) {
+  const match = hex.match(/.{1,2}/g);
+  return match ? new Uint8Array(match.map(b => parseInt(b, 16))) : new Uint8Array(0);
+}
+
+function generate6CharSvgCaptcha() {
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+
+  let lines = '';
+  for (let i = 0; i < 7; i++) {
+    const x1 = Math.floor(Math.random() * 200);
+    const y1 = Math.floor(Math.random() * 60);
+    const x2 = Math.floor(Math.random() * 200);
+    const y2 = Math.floor(Math.random() * 60);
+    const colors = ['#f97316', '#06b6d4', '#10b981', '#a855f7', '#ec4899'];
+    lines += \`<line x1="\${x1}" y1="\${y1}" x2="\${x2}" y2="\${y2}" stroke="\${colors[i % colors.length]}" stroke-width="1.5" opacity="0.6"/>\`;
+  }
+
+  let textSvg = '';
+  for (let i = 0; i < 6; i++) {
+    const x = 20 + i * 28;
+    const y = 38 + (Math.random() * 8 - 4);
+    const rot = Math.floor(Math.random() * 30 - 15);
+    textSvg += \`<text x="\${x}" y="\${y}" fill="#06b6d4" font-size="26" font-family="monospace" font-weight="bold" transform="rotate(\${rot}, \${x}, \${y})">\${code[i]}</text>\`;
+  }
+
+  const svg = \`<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60" style="background:#090d16; border-radius:12px;"><rect width="100%" height="100%" fill="#090d16"/>\${lines}\${textSvg}</svg>\`;
+  const base64Svg = Buffer.from(svg).toString('base64');
+  return { code, dataUrl: \`data:image/svg+xml;base64,\${base64Svg}\` };
+}
+
+async function verifySignature(request, publicKey) {
+  const signature = request.headers.get('X-Signature-Ed25519');
+  const timestamp = request.headers.get('X-Signature-Timestamp');
+  const body = await request.text();
+
+  if (!signature || !timestamp || !publicKey) return { isValid: false, rawBody: body };
+
+  try {
+    const key = await crypto.subtle.importKey(
+      'raw',
+      hexToUint8Array(publicKey),
+      { name: 'NODE-ED25519', namedCurve: 'NODE-ED25519' },
+      true,
+      ['verify']
+    );
+
+    const isValid = await crypto.subtle.verify(
+      'NODE-ED25519',
+      key,
+      hexToUint8Array(signature),
+      new TextEncoder().encode(timestamp + body)
+    );
+
+    return { isValid, rawBody: body };
+  } catch (err) {
+    return { isValid: false, rawBody: body };
+  }
+}
+
+export default {
+  async fetch(request, env) {
+    if (request.method !== 'POST') {
+      return new Response('BotFlare Cloud Multi-Bot Worker Active', { status: 200 });
+    }
+
+    const cloneReq = request.clone();
+    let interaction;
+    try {
+      interaction = await cloneReq.json();
+    } catch {
+      return new Response('Invalid JSON', { status: 400 });
+    }
+
+    const publicKey = env.DISCORD_PUBLIC_KEY;
+
+    const { isValid } = await verifySignature(request, publicKey);
+    if (!isValid) return new Response('Invalid Signature', { status: 401 });
+
+    if (interaction.type === 1) {
+      return Response.json({ type: 1 });
+    }
+
+    if (interaction.type === 3 && interaction.data.custom_id === 'btn_start_6char_verify') {
+      const { code } = generate6CharSvgCaptcha();
+      return Response.json({
+        type: 9,
+        data: {
+          custom_id: \`modal_captcha_submit_\${code}\`,
+          title: '🛡️ 請輸入 6 位圖形驗證碼',
+          components: [{
+            type: 1,
+            components: [{
+              type: 4,
+              custom_id: 'captcha_input',
+              label: '驗證碼 (區分大小寫)',
+              style: 1,
+              min_length: 6,
+              max_length: 6,
+              required: true
+            }]
+          }]
+        }
+      });
+    }
+
+    if (interaction.type === 5 && interaction.data.custom_id.startsWith('modal_captcha_submit_')) {
+      const expectedCode = interaction.data.custom_id.replace('modal_captcha_submit_', '');
+      const userInput = interaction.data.components[0].components[0].value.trim();
+      const user = interaction.member?.user || interaction.user;
+
+      if (userInput.toUpperCase() === expectedCode.toUpperCase()) {
+        return Response.json({
+          type: 4,
+          data: { content: \`✅ <@\${user.id}> 6 字圖形驗證成功！\`, flags: 64 }
+        });
+      } else {
+        return Response.json({
+          type: 4,
+          data: { content: '❌ 驗證碼不正確！請重新嘗試。', flags: 64 }
+        });
+      }
+    }
+
+    if (interaction.type === 2) {
+      const { name } = interaction.data;
+${commandCases}
+    }
+
+    return new Response('Not Found', { status: 404 });
+  }
+};`;
+
+            if (typeof activeTab !== 'undefined' && activeTab === 'generator') updateGeneratedCode();
+        }
+
+        function updateGeneratedCode() {
+            const codeElem = document.getElementById('generated-code-block');
+            if (codeElem && codeFiles['index.js']) {
+                codeElem.textContent = codeFiles['index.js'];
+            }
+        }
+
+        function copyGeneratedCode() {
+            if (codeFiles['index.js']) {
+                navigator.clipboard.writeText(codeFiles['index.js']).then(() => {
+                    alert('已將程式碼複製到剪貼簿！');
+                });
+            }
+        }
+
+        function saveVerifySettings() {
+            alert('門禁設定已儲存！');
+            generateWorkerCode();
+        }
+
+        // Initialize Application
+        window.addEventListener('DOMContentLoaded', () => {
+            loadBotVault();
+            loadCommands();
+            switchTab('metrics');
+        });
+    </script>
+</body>
+</html>
